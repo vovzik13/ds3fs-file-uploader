@@ -388,15 +388,17 @@
             // 
             // labelElapsedTime
             // 
+            labelElapsedTime          = new System.Windows.Forms.Label();
             labelElapsedTime.AutoSize = true;
             labelElapsedTime.Location = new System.Drawing.Point(337, 435);
-            labelElapsedTime.Name = "labelElapsedTime";
-            labelElapsedTime.Size = new System.Drawing.Size(49, 15);
+            labelElapsedTime.Name     = "labelElapsedTime";
+            labelElapsedTime.Size     = new System.Drawing.Size(49, 15);
             labelElapsedTime.TabIndex = 34;
-            labelElapsedTime.Text = "00:00:00";
+            labelElapsedTime.Text     = "00:00:00";
             // 
             // timerElapsed
             // 
+            timerElapsed          = new System.Windows.Forms.Timer();
             timerElapsed.Interval = 1000;
             timerElapsed.Tick += timerElapsed_Tick;
             // 
