@@ -200,7 +200,7 @@ namespace Ds3fsFileUploader
                     if (success)
                     {
                         successCount++;
-                        LogMessage($"УСПЕХ: {relativePath}");
+                        LogMessage($"{relativePath}");
                     }
                     else
                     {
@@ -228,7 +228,7 @@ namespace Ds3fsFileUploader
             LogMessage($"Загрузка завершена. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
 
             MessageBox.Show($"""
-                             УСПЕХ!!! Обработка файлов завершена.
+                             Обработка файлов завершена.
                              Успешно загружено: {successCount}
                              С ошибками: {errorCount}
                              Пропущено (уже существуют): {skippedCount}
