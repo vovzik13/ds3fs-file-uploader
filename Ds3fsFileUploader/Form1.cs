@@ -261,7 +261,7 @@ namespace Ds3fsFileUploader
             Console.WriteLine($@"Пропущено: {skippedCount}");
             LogMessage($"Загрузка завершена. Время начала: {_operationStartTime:HH:mm:ss}, Время окончания: {operationEndTime:HH:mm:ss}, Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}, Средняя скорость: {avgSpeedMbps:F2} MB/s. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
 
-            MessageBox.Show($$"""
+            MessageBox.Show($"""
                              Обработка файлов завершена.
                              Время начала: {_operationStartTime:HH:mm:ss}
                              Время окончания: {operationEndTime:HH:mm:ss}
