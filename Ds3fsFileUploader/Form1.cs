@@ -159,7 +159,7 @@ namespace Ds3fsFileUploader
             }
 
             // Создаем HttpClient с обработчиком автоматического обновления токена
-            using var tokenHandler = new TokenService.RefreshTokenHandler(_tokenService);
+            using var tokenHandler = new TokenService.RefreshTokenHandler(_tokenService, LogMessage);
             using var httpClient = new HttpClient(tokenHandler);
             httpClient.Timeout = TimeSpan.FromHours(2);
             httpClient.DefaultRequestHeaders.Accept.Clear();
