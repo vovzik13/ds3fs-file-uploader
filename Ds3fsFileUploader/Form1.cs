@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Ds3fsFileUploader.Models;
+using Ds3fsFileUploader.Services;
 using Microsoft.Win32;
 using static System.Text.Json.JsonSerializer;
 using FormsApplication = System.Windows.Forms.Application;
@@ -10,6 +11,7 @@ namespace Ds3fsFileUploader
     {
         private CancellationTokenSource _cancellationTokenSource = null!;
         private bool                    _isRunning;
+        private TokenService?           _tokenService;
 
         // Куда копировать
         private string _destinationUrl = null!;
@@ -121,6 +123,10 @@ namespace Ds3fsFileUploader
             _isRunning = false;
             _cancellationTokenSource.Cancel();
 
+            // Освобождаем сервис токенов
+            _tokenService?.Dispose();
+            _tokenService = null;
+
             // Обновляем кнопку
             UpdateStartStopButton(false);
 
@@ -135,21 +141,8 @@ namespace Ds3fsFileUploader
             // Проверяем отмену в начале
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Получаем access token
-            Console.WriteLine(@"Получение access token...");
-            string accessToken;
-            try
-            {
-                accessToken = await GetAccessToken(cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-                Console.WriteLine(@"Access token успешно получен");
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                LogMessage($"Не удалось получить access token: {ex.Message}");
-                Console.WriteLine($@"Ошибка: Не удалось получить access token: {ex.Message}");
-                return;
-            }
+            // Инициализируем сервис токенов
+            _tokenService = new TokenService(async () => await GetAccessToken(cancellationToken));
 
             var allFiles = GetAllFiles(tb_SourceFolder.Text);
             cancellationToken.ThrowIfCancellationRequested();
@@ -165,10 +158,10 @@ namespace Ds3fsFileUploader
                 return;
             }
 
-            // Создаем HttpClient с настройками
-            using var httpClient = new HttpClient();
-            httpClient.Timeout                             = TimeSpan.FromHours(2);
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            // Создаем HttpClient с обработчиком автоматического обновления токена
+            using var tokenHandler = new TokenService.RefreshTokenHandler(_tokenService);
+            using var httpClient = new HttpClient(tokenHandler);
+            httpClient.Timeout = TimeSpan.FromHours(2);
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
 
@@ -631,7 +624,13 @@ namespace Ds3fsFileUploader
                     if (string.IsNullOrEmpty(tokenResponse?.AccessToken))
                         throw new Exception("Access token не найден в ответе");
 
-                    LogMessage("Access token успешно получен");
+                    // Устанавливаем время истечения токена в сервисе
+                    if (tokenResponse.ExpiresIn > 0 && _tokenService != null)
+                    {
+                        _tokenService.SetTokenExpiration(tokenResponse.ExpiresIn);
+                    }
+
+                    LogMessage($"Access token успешно получен. Время жизни: {tokenResponse.ExpiresIn} сек.");
                     return tokenResponse.AccessToken;
                 }
 
