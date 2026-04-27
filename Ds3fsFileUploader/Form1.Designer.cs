@@ -386,6 +386,20 @@
             label17.TabIndex    = 33;
             label17.Text        = "Куда:";
             // 
+            // labelElapsedTime
+            // 
+            labelElapsedTime.AutoSize = true;
+            labelElapsedTime.Location = new System.Drawing.Point(337, 435);
+            labelElapsedTime.Name = "labelElapsedTime";
+            labelElapsedTime.Size = new System.Drawing.Size(49, 15);
+            labelElapsedTime.TabIndex = 34;
+            labelElapsedTime.Text = "00:00:00";
+            // 
+            // timerElapsed
+            // 
+            timerElapsed.Interval = 1000;
+            timerElapsed.Tick += timerElapsed_Tick;
+            // 
             // FrmMain
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -426,6 +440,7 @@
             Controls.Add(label14);
             Controls.Add(label16);
             Controls.Add(label17);
+            Controls.Add(labelElapsedTime);
             Margin      = new System.Windows.Forms.Padding(2, 1, 2, 1);
             MaximizeBox = false;
             Text        = "Копирование папки в FS";
@@ -487,6 +502,8 @@
         private System.Windows.Forms.TextBox     tbCurentFile;
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.Label       label3;
+        private System.Windows.Forms.Label       labelElapsedTime;
+        private System.Windows.Forms.Timer       timerElapsed;
         
         private System.Windows.Forms.Button      btSaveSettings;
         private System.Windows.Forms.ProgressBar progressBar2;
