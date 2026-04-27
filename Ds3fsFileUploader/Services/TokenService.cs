@@ -92,18 +92,18 @@ public class TokenService : IDisposable
     public class RefreshTokenHandler : DelegatingHandler
     {
         private readonly TokenService _tokenService;
-        private readonly ILogger?     _logger;
+        private readonly Action<string> _logAction;
 
-        public RefreshTokenHandler(TokenService tokenService, ILogger? logger = null)
-            : this(tokenService, new HttpClientHandler(), logger)
+        public RefreshTokenHandler(TokenService tokenService, Action<string> logAction)
+            : this(tokenService, new HttpClientHandler(), logAction)
         {
         }
 
-        public RefreshTokenHandler(TokenService tokenService, HttpMessageHandler innerHandler, ILogger? logger = null)
+        public RefreshTokenHandler(TokenService tokenService, HttpMessageHandler innerHandler, Action<string> logAction)
             : base(innerHandler)
         {
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
-            _logger       = logger;
+            _logAction    = logAction ?? throw new ArgumentNullException(nameof(logAction));
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(
@@ -120,7 +120,7 @@ public class TokenService : IDisposable
             // Если получили 401 - пробуем обновить токен и повторить запрос
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                _logger?.LogWarning("Получена ошибка 401. Попытка обновления токена...");
+                _logAction($"[TokenService] Получена ошибка 401. Попытка обновления токена...");
                 Console.WriteLine("[TokenService] Получена ошибка 401. Обновляем токен...");
 
                 // Инвалидируем текущий токен
@@ -140,13 +140,14 @@ public class TokenService : IDisposable
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger?.LogInformation("Запрос успешно выполнен после обновления токена");
+                    _logAction("[TokenService] Запрос успешно выполнен после обновления токена");
                     Console.WriteLine("[TokenService] Запрос успешно выполнен после обновления токена");
                 }
-                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                else
                 {
-                    _logger?.LogError("Повторная попытка с новым токеном также вернула 401");
-                    Console.WriteLine("[TokenService] Повторная попытка также вернула 401. Токен недействителен.");
+                    // Логируем любую ошибку после повторной попытки (не только 401)
+                    _logAction($"[TokenService] Повторная попыка с новым токеном вернула ошибку {(int)response.StatusCode} - {response.ReasonPhrase}");
+                    Console.WriteLine($"[TokenService] Повторная попытка также вернула ошибку {(int)response.StatusCode}. Токен недействителен или другая ошибка.");
                 }
             }
 
@@ -181,13 +182,6 @@ public class TokenService : IDisposable
 
             return clone;
         }
-    }
-
-    public interface ILogger
-    {
-        void LogWarning(string message);
-        void LogError(string message);
-        void LogInformation(string message);
     }
 
     public void Dispose()
