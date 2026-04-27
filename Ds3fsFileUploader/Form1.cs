@@ -243,6 +243,9 @@ namespace Ds3fsFileUploader
             var operationEndTime = DateTime.Now;
             var operationDuration = operationEndTime - _operationStartTime;
             
+            // Останавливаем таймер перед показом сообщения
+            timerElapsed.Stop();
+            
             Console.WriteLine($@"Загрузка завершена!");
             Console.WriteLine($@"Время начала: {_operationStartTime:HH:mm:ss}");
             Console.WriteLine($@"Время окончания: {operationEndTime:HH:mm:ss}");
