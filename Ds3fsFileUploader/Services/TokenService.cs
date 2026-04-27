@@ -96,6 +96,12 @@ namespace Ds3fsFileUploader.Services
             private readonly ILogger? _logger;
 
             public RefreshTokenHandler(TokenService tokenService, ILogger? logger = null)
+                : this(tokenService, new HttpClientHandler(), logger)
+            {
+            }
+
+            public RefreshTokenHandler(TokenService tokenService, HttpMessageHandler innerHandler, ILogger? logger = null)
+                : base(innerHandler)
             {
                 _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
                 _logger = logger;
