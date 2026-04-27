@@ -246,20 +246,27 @@ namespace Ds3fsFileUploader
             // Останавливаем таймер перед показом сообщения
             timerElapsed.Stop();
             
+            // Рассчитываем среднюю скорость загрузки
+            var avgSpeedMbps = operationDuration.TotalSeconds > 0 
+                ? _totalBytesUploaded / operationDuration.TotalSeconds / 1024 / 1024 
+                : 0;
+            
             Console.WriteLine($@"Загрузка завершена!");
             Console.WriteLine($@"Время начала: {_operationStartTime:HH:mm:ss}");
             Console.WriteLine($@"Время окончания: {operationEndTime:HH:mm:ss}");
             Console.WriteLine($@"Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}");
+            Console.WriteLine($@"Средняя скорость: {avgSpeedMbps:F2} MB/s");
             Console.WriteLine($@"Успешно: {successCount}");
             Console.WriteLine($@"С ошибками: {errorCount}");
             Console.WriteLine($@"Пропущено: {skippedCount}");
-            LogMessage($"Загрузка завершена. Время начала: {_operationStartTime:HH:mm:ss}, Время окончания: {operationEndTime:HH:mm:ss}, Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
+            LogMessage($"Загрузка завершена. Время начала: {_operationStartTime:HH:mm:ss}, Время окончания: {operationEndTime:HH:mm:ss}, Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}, Средняя скорость: {avgSpeedMbps:F2} MB/s. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
 
-            MessageBox.Show($"""
+            MessageBox.Show($$"""
                              Обработка файлов завершена.
                              Время начала: {_operationStartTime:HH:mm:ss}
                              Время окончания: {operationEndTime:HH:mm:ss}
                              Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}
+                             Средняя скорость: {avgSpeedMbps:F2} MB/s
                              Успешно загружено: {successCount}
                              С ошибками: {errorCount}
                              Пропущено (уже существуют): {skippedCount}

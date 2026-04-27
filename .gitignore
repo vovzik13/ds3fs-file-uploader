@@ -4,27 +4,38 @@
 *.exe
 *.dll
 *.pdb
-*.userprefs
 *.user
+*.userosscache
 *.suo
 *.cache
-*.nupkg
-*.snk
-# Dependencies
-packages/
-# Logs and temp files
+*.ilk
+*.exp
+*.lib
+*.iobj
+*.ipdb
+*.builds
+*.built
 *.log
 *.tmp
-*.swp
+
+# Dependencies
+packages/
+bin/
+obj/
+Debug/
+Release/
+x64/
+x86/
+build/
+
 # Environment
 .env
 .env.local
-*.env.*
+.env.*
+
 # Editors
 .vs/
-.vscode/
-.idea/
-# OS generated files
-.DS_Store
-Thumbs.db
+.vshistory/
+.ReSharper*/
+_UpgradeReport_Files/
 ```
