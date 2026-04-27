@@ -12,6 +12,9 @@ namespace Ds3fsFileUploader
         private CancellationTokenSource _cancellationTokenSource = null!;
         private bool                    _isRunning;
         private TokenService?           _tokenService;
+        private DateTime                _operationStartTime;
+        private long                    _totalBytesUploaded;
+        private long                    _totalSourceFolderSize;
 
         // Куда копировать
         private string _destinationUrl = null!;
@@ -59,6 +62,10 @@ namespace Ds3fsFileUploader
             // Получите путь к выбранной папке
             tb_SourceFolder.Text  = folderBrowserDialog1.SelectedPath;
             btGetFileList.Enabled = true;
+            
+            // Вычисляем общий размер файлов в папке
+            _totalSourceFolderSize = CalculateTotalFolderSize(tb_SourceFolder.Text);
+            label1.Text = $"Источник: {FormatFileSize(_totalSourceFolderSize)}";
         }
 
         private async void btGetFileList_Click(object sender, EventArgs e)
@@ -87,6 +94,13 @@ namespace Ds3fsFileUploader
         {
             _isRunning               = true;
             _cancellationTokenSource = new CancellationTokenSource();
+            
+            // Инициализируем переменные для отслеживания
+            _operationStartTime = DateTime.Now;
+            _totalBytesUploaded = 0;
+
+            // Запускаем таймер
+            timerElapsed.Start();
 
             // Обновляем кнопку
             UpdateStartStopButton(true);
@@ -122,6 +136,9 @@ namespace Ds3fsFileUploader
         {
             _isRunning = false;
             _cancellationTokenSource.Cancel();
+            
+            // Останавливаем таймер
+            timerElapsed.Stop();
 
             // Освобождаем сервис токенов
             _tokenService?.Dispose();
@@ -179,6 +196,7 @@ namespace Ds3fsFileUploader
 
                 var filePath     = filesToUpload[i];
                 var relativePath = GetRelativePath(tb_SourceFolder.Text, filePath);
+                var fileSize     = new FileInfo(filePath).Length;
 
                 Console.WriteLine($@"[{i + 1}/{filesToUpload.Count}] Загрузка: {Path.GetFileName(filePath)} ({GetFileSizeReadable(filePath)})");
 
@@ -190,7 +208,7 @@ namespace Ds3fsFileUploader
                 {
                     // Файл уже существует - пропускаем
                     skippedCount++;
-                    LogMessage($"ПРОПУЩЕН: {relativePath} - файл уже существует в хранилище");
+                    LogMessage($"ПРОПУЩЕН: {relativePath} ({FormatFileSize(fileSize)}) - файл уже существует в хранилище");
                     Console.WriteLine($@"Файл уже существует, пропускаем...");
                 }
                 else
@@ -200,12 +218,13 @@ namespace Ds3fsFileUploader
                     if (success)
                     {
                         successCount++;
-                        LogMessage($"{relativePath}");
+                        _totalBytesUploaded += fileSize;
+                        LogMessage($"{relativePath} ({FormatFileSize(fileSize)})");
                     }
                     else
                     {
                         errorCount++;
-                        LogMessage($"ОШИБКА: {relativePath} - не удалось загрузить после 3 попыток");
+                        LogMessage($"ОШИБКА: {relativePath} ({FormatFileSize(fileSize)}) - не удалось загрузить после 3 попыток");
                     }
                 }
 
@@ -221,14 +240,33 @@ namespace Ds3fsFileUploader
             await CreateEmptyFoldersInApi(httpClient, tb_SourceFolder.Text, _destinationUrl, cancellationToken);
 
             // Финальный отчет
+            var operationEndTime = DateTime.Now;
+            var operationDuration = operationEndTime - _operationStartTime;
+            
+            // Останавливаем таймер перед показом сообщения
+            timerElapsed.Stop();
+            
+            // Рассчитываем среднюю скорость загрузки
+            var avgSpeedMbps = operationDuration.TotalSeconds > 0 
+                ? _totalBytesUploaded / operationDuration.TotalSeconds / 1024 / 1024 
+                : 0;
+            
             Console.WriteLine($@"Загрузка завершена!");
+            Console.WriteLine($@"Время начала: {_operationStartTime:HH:mm:ss}");
+            Console.WriteLine($@"Время окончания: {operationEndTime:HH:mm:ss}");
+            Console.WriteLine($@"Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}");
+            Console.WriteLine($@"Средняя скорость: {avgSpeedMbps:F2} MB/s");
             Console.WriteLine($@"Успешно: {successCount}");
             Console.WriteLine($@"С ошибками: {errorCount}");
             Console.WriteLine($@"Пропущено: {skippedCount}");
-            LogMessage($"Загрузка завершена. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
+            LogMessage($"Загрузка завершена. Время начала: {_operationStartTime:HH:mm:ss}, Время окончания: {operationEndTime:HH:mm:ss}, Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}, Средняя скорость: {avgSpeedMbps:F2} MB/s. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
 
             MessageBox.Show($"""
                              Обработка файлов завершена.
+                             Время начала: {_operationStartTime:HH:mm:ss}
+                             Время окончания: {operationEndTime:HH:mm:ss}
+                             Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}
+                             Средняя скорость: {avgSpeedMbps:F2} MB/s
                              Успешно загружено: {successCount}
                              С ошибками: {errorCount}
                              Пропущено (уже существуют): {skippedCount}
@@ -485,6 +523,48 @@ namespace Ds3fsFileUploader
             }
         }
 
+        private static string FormatFileSize(long bytes)
+        {
+            string[] sizes = ["B", "KB", "MB", "GB", "TB"];
+            var      order = 0;
+            double   size  = bytes;
+
+            while (size >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                size = size / 1024;
+            }
+
+            return $"{size:0.##} {sizes[order]}";
+        }
+
+        private static long CalculateTotalFolderSize(string folderPath)
+        {
+            try
+            {
+                long totalSize = 0;
+                var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
+                
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        totalSize += new FileInfo(file).Length;
+                    }
+                    catch
+                    {
+                        // Игнорируем файлы, к которым нет доступа
+                    }
+                }
+                
+                return totalSize;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         private void UpdateProgressBar(int current, int total, int success, int errors, int skipped = 0)
         {
             if (this.InvokeRequired)
@@ -499,7 +579,7 @@ namespace Ds3fsFileUploader
             progressBar1.Value = Math.Min((int)((double)current / total * 100), progressBar1.Maximum);
 
             // Обновляем текстовые поля с учетом пропущенных файлов
-            label3.Text = $@"{current}/{total} файлов | Успешно: {success} | Ошибки: {errors} | Пропущено: {skipped}";
+            label3.Text = $@"{current}/{total} файлов | {FormatFileSize(_totalBytesUploaded)}/{FormatFileSize(_totalSourceFolderSize)} | Успешно: {success} | Ошибки: {errors} | Пропущено: {skipped}";
 
             // Принудительно обновляем интерфейс
             progressBar1.Refresh();
@@ -890,6 +970,18 @@ namespace Ds3fsFileUploader
                 LogMessage($"Исключение при проверке существования файла {relativePath}: {ex.Message}");
                 return false; // В случае исключения считаем что файла нет
             }
+        }
+
+        private void timerElapsed_Tick(object sender, EventArgs e)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<object, EventArgs>(timerElapsed_Tick), sender, e);
+                return;
+            }
+
+            var elapsed = DateTime.Now - _operationStartTime;
+            labelElapsedTime.Text = $"{elapsed.Hours:D2}:{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
         }
     }
 }
