@@ -203,15 +203,11 @@ namespace Ds3fsFileUploader
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
 
-            var successCount = 0;
-            var errorCount   = 0;
-            var skippedCount = 0;
-
             // Инициализируем семафор для ограничения параллелизма
             _uploadSemaphore = new SemaphoreSlim(Settings.MaxParallelUploads, Settings.MaxParallelUploads);
 
             // Создаем список задач для всех файлов
-            var uploadTasks = new List<Task<(bool success, long fileSize)>>();
+            var uploadTasks = new List<Task<(bool success, long fileSize, bool isSkipped)>>();
 
             for (var i = 0; i < filesToUpload.Count; i++)
             {
@@ -222,7 +218,7 @@ namespace Ds3fsFileUploader
                     try
                     {
                         return await ProcessFileWithSlot(httpClient, filesToUpload[index], index, filesToUpload.Count, 
-                            ref successCount, ref errorCount, ref skippedCount, cancellationToken);
+                            cancellationToken);
                     }
                     finally
                     {
@@ -237,11 +233,29 @@ namespace Ds3fsFileUploader
             var results = await Task.WhenAll(uploadTasks);
 
             // Подсчитываем результаты
-            foreach (var (success, fileSize) in results)
+            int successCount = 0;
+            int errorCount = 0;
+            int skippedCount = 0;
+            
+            foreach (var (success, fileSize, isSkipped) in results)
             {
-                if (success && fileSize > 0)
+                if (isSkipped)
+                {
+                    skippedCount++;
+                }
+                else if (success && fileSize > 0)
+                {
+                    successCount++;
                     _totalBytesUploaded += fileSize;
+                }
+                else if (!success)
+                {
+                    errorCount++;
+                }
             }
+            
+            // Обновляем прогресс бар с итоговыми результатами
+            UpdateProgressBar(filesToUpload.Count, filesToUpload.Count, successCount, errorCount, skippedCount);
 
             // Проверяем отмену перед обработкой пустых папок
             cancellationToken.ThrowIfCancellationRequested();
@@ -703,14 +717,11 @@ namespace Ds3fsFileUploader
         /// <summary>
         /// Обработка файла с использованием слота
         /// </summary>
-        private async Task<(bool success, long fileSize)> ProcessFileWithSlot(
+        private async Task<(bool success, long fileSize, bool isSkipped)> ProcessFileWithSlot(
             HttpClient httpClient, 
             string filePath, 
             int fileIndex, 
             int totalFiles,
-            ref int successCount, 
-            ref int errorCount, 
-            ref int skippedCount, 
             CancellationToken cancellationToken)
         {
             var fileInfo = new FileInfo(filePath);
@@ -728,7 +739,7 @@ namespace Ds3fsFileUploader
             
             if (cancellationToken.IsCancellationRequested)
             {
-                return (false, 0);
+                return (false, 0, false);
             }
             
             try
@@ -750,9 +761,7 @@ namespace Ds3fsFileUploader
                 if (fileExists)
                 {
                     LogMessage($"Файл уже существует: {relativePath}");
-                    skippedCount++;
-                    UpdateProgressBar(fileIndex + 1, totalFiles, successCount, errorCount, skippedCount);
-                    return (true, 0);
+                    return (true, 0, true);
                 }
                 
                 // Загружаем файл с повторными попытками
@@ -767,12 +776,10 @@ namespace Ds3fsFileUploader
                 
                 if (uploadSuccess)
                 {
-                    successCount++;
                     LogMessage($"Успешно загружен: {relativePath}");
                 }
                 else
                 {
-                    errorCount++;
                     LogMessage($"Ошибка загрузки: {relativePath}");
                     
                     // Обновляем метку слота об ошибке
@@ -786,9 +793,7 @@ namespace Ds3fsFileUploader
                     }
                 }
                 
-                UpdateProgressBar(fileIndex + 1, totalFiles, successCount, errorCount, skippedCount);
-                
-                return (uploadSuccess, uploadSuccess ? fileInfo.Length : 0);
+                return (uploadSuccess, uploadSuccess ? fileInfo.Length : 0, false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -797,10 +802,8 @@ namespace Ds3fsFileUploader
             }
             catch (Exception ex)
             {
-                errorCount++;
                 LogMessage($"Исключение при загрузке {fileName}: {ex.Message}");
-                UpdateProgressBar(fileIndex + 1, totalFiles, successCount, errorCount, skippedCount);
-                return (false, 0);
+                return (false, 0, false);
             }
             finally
             {

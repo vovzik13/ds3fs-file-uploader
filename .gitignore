@@ -13,46 +13,30 @@
 *.lib
 *.iobj
 *.ipdb
-*.tlog
-*.wrn
-*.metagen
-*.metaxml
-
-# Output directories
-bin/
-obj/
-Debug/
-Release/
-x64/
-x86/
-Debug*/
-Release*/
+*.builds
+*.built
+*.log
 
 # Dependencies
 packages/
-node_modules/
-vendor/
+bin/
+obj/
 
-# Logs
-*.log
+# Visual Studio files
+.vs/
+*.userprefs
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Editors
-.vs/
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS generated
+# OS generated files
 .DS_Store
 Thumbs.db
-desktop.ini
-
-# Testing
-TestResults/
 ```
