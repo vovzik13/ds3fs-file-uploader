@@ -17,9 +17,9 @@ namespace Ds3fsFileUploader
         private long                    _totalSourceFolderSize;
 
         // Переменные для параллельной загрузки
-        private SemaphoreSlim _uploadSemaphore = null!;
-        private List<FileUploadSlot> _uploadSlots = null!;
-        private object _slotsLock = new object();
+        private SemaphoreSlim        _uploadSemaphore = null!;
+        private List<FileUploadSlot> _uploadSlots     = null!;
+        private object               _slotsLock       = new object();
 
         // Куда копировать
         private string _destinationUrl = null!;
@@ -54,7 +54,7 @@ namespace Ds3fsFileUploader
 
             // Загружаем настройки
             LoadSettings();
-            
+
             // Инициализируем слоты для загрузки
             InitializeUploadSlots();
         }
@@ -70,10 +70,10 @@ namespace Ds3fsFileUploader
             // Получите путь к выбранной папке
             tb_SourceFolder.Text  = folderBrowserDialog1.SelectedPath;
             btGetFileList.Enabled = true;
-            
+
             // Вычисляем общий размер файлов в папке
             _totalSourceFolderSize = CalculateTotalFolderSize(tb_SourceFolder.Text);
-            label1.Text = $"Источник: {FormatFileSize(_totalSourceFolderSize)}";
+            label1.Text            = $"Источник: {FormatFileSize(_totalSourceFolderSize)}";
         }
 
         private async void btGetFileList_Click(object sender, EventArgs e)
@@ -102,7 +102,7 @@ namespace Ds3fsFileUploader
         {
             _isRunning               = true;
             _cancellationTokenSource = new CancellationTokenSource();
-            
+
             // Инициализируем переменные для отслеживания
             _operationStartTime = DateTime.Now;
             _totalBytesUploaded = 0;
@@ -144,7 +144,7 @@ namespace Ds3fsFileUploader
         {
             _isRunning = false;
             _cancellationTokenSource.Cancel();
-            
+
             // Останавливаем таймер
             timerElapsed.Stop();
 
@@ -198,7 +198,7 @@ namespace Ds3fsFileUploader
 
             // Создаем HttpClient с обработчиком автоматического обновления токена
             using var tokenHandler = new TokenService.RefreshTokenHandler(_tokenService, LogMessage);
-            using var httpClient = new HttpClient(tokenHandler);
+            using var httpClient   = new HttpClient(tokenHandler);
             httpClient.Timeout = TimeSpan.FromHours(2);
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
@@ -217,7 +217,7 @@ namespace Ds3fsFileUploader
                     await _uploadSemaphore.WaitAsync(cancellationToken);
                     try
                     {
-                        return await ProcessFileWithSlot(httpClient, filesToUpload[index], index, filesToUpload.Count, 
+                        return await ProcessFileWithSlot(httpClient, filesToUpload[index], index, filesToUpload.Count,
                             cancellationToken);
                     }
                     finally
@@ -225,7 +225,7 @@ namespace Ds3fsFileUploader
                         _uploadSemaphore.Release();
                     }
                 }, cancellationToken);
-                
+
                 uploadTasks.Add(task);
             }
 
@@ -234,9 +234,9 @@ namespace Ds3fsFileUploader
 
             // Подсчитываем результаты
             int successCount = 0;
-            int errorCount = 0;
+            int errorCount   = 0;
             int skippedCount = 0;
-            
+
             foreach (var (success, fileSize, isSkipped) in results)
             {
                 if (isSkipped)
@@ -253,7 +253,7 @@ namespace Ds3fsFileUploader
                     errorCount++;
                 }
             }
-            
+
             // Обновляем прогресс бар с итоговыми результатами
             UpdateProgressBar(filesToUpload.Count, filesToUpload.Count, successCount, errorCount, skippedCount);
 
@@ -265,17 +265,17 @@ namespace Ds3fsFileUploader
             await CreateEmptyFoldersInApi(httpClient, tb_SourceFolder.Text, _destinationUrl, cancellationToken);
 
             // Финальный отчет
-            var operationEndTime = DateTime.Now;
+            var operationEndTime  = DateTime.Now;
             var operationDuration = operationEndTime - _operationStartTime;
-            
+
             // Останавливаем таймер перед показом сообщения
             timerElapsed.Stop();
-            
+
             // Рассчитываем среднюю скорость загрузки
-            var avgSpeedMbps = operationDuration.TotalSeconds > 0 
-                ? _totalBytesUploaded / operationDuration.TotalSeconds / 1024 / 1024 
+            var avgSpeedMbps = operationDuration.TotalSeconds > 0
+                ? _totalBytesUploaded / operationDuration.TotalSeconds / 1024 / 1024
                 : 0;
-            
+
             Console.WriteLine($@"Загрузка завершена!");
             Console.WriteLine($@"Время начала: {_operationStartTime:HH:mm:ss}");
             Console.WriteLine($@"Время окончания: {operationEndTime:HH:mm:ss}");
@@ -284,7 +284,8 @@ namespace Ds3fsFileUploader
             Console.WriteLine($@"Успешно: {successCount}");
             Console.WriteLine($@"С ошибками: {errorCount}");
             Console.WriteLine($@"Пропущено: {skippedCount}");
-            LogMessage($"Загрузка завершена. Время начала: {_operationStartTime:HH:mm:ss}, Время окончания: {operationEndTime:HH:mm:ss}, Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}, Средняя скорость: {avgSpeedMbps:F2} MB/s. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
+            LogMessage(
+                $"Загрузка завершена. Время начала: {_operationStartTime:HH:mm:ss}, Время окончания: {operationEndTime:HH:mm:ss}, Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}, Средняя скорость: {avgSpeedMbps:F2} MB/s. Успешно: {successCount}, С ошибками: {errorCount}, Пропущено: {skippedCount}");
 
             MessageBox.Show($"""
                              Обработка файлов завершена.
@@ -391,8 +392,8 @@ namespace Ds3fsFileUploader
                         progressCallback = (bytes, total, _) => UpdateSlotProgress(slot, bytes, total);
                     }
 
-                    if (await UploadFile(httpClient, filePath, relativePath, destinationUrl, 
-                            progressCallback, 
+                    if (await UploadFile(httpClient, filePath, relativePath, destinationUrl,
+                            progressCallback,
                             cancellationToken,
                             slot?.SlotIndex ?? -1))
                     {
@@ -579,8 +580,8 @@ namespace Ds3fsFileUploader
             try
             {
                 long totalSize = 0;
-                var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
-                
+                var  files     = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
+
                 foreach (var file in files)
                 {
                     try
@@ -592,7 +593,7 @@ namespace Ds3fsFileUploader
                         // Игнорируем файлы, к которым нет доступа
                     }
                 }
-                
+
                 return totalSize;
             }
             catch
@@ -615,7 +616,8 @@ namespace Ds3fsFileUploader
             progressBar1.Value = Math.Min((int)((double)current / total * 100), progressBar1.Maximum);
 
             // Обновляем текстовые поля с учетом пропущенных файлов
-            label3.Text = $@"{current}/{total} файлов | {FormatFileSize(_totalBytesUploaded)}/{FormatFileSize(_totalSourceFolderSize)} | Успешно: {success} | Ошибки: {errors} | Пропущено: {skipped}";
+            label3.Text =
+                $@"{current}/{total} файлов | {FormatFileSize(_totalBytesUploaded)}/{FormatFileSize(_totalSourceFolderSize)} | Успешно: {success} | Ошибки: {errors} | Пропущено: {skipped}";
 
             // Принудительно обновляем интерфейс
             progressBar1.Refresh();
@@ -632,45 +634,45 @@ namespace Ds3fsFileUploader
         private void InitializeUploadSlots()
         {
             _uploadSlots = new List<FileUploadSlot>();
-            
+
             // Очищаем панель от старых контролов
             pnlFileSlots.Controls.Clear();
-            
+
             // Создаем слоты согласно настройке MaxParallelUploads
             for (int i = 0; i < Settings.MaxParallelUploads; i++)
             {
                 // Создаем прогресс-бар для слота
                 var progressBar = new ProgressBar
                 {
-                    Name = $"pbSlot{i}",
-                    Size = new System.Drawing.Size(380, 20),
+                    Name    = $"pbSlot{i}",
+                    Size    = new System.Drawing.Size(380, 20),
                     Maximum = 100,
-                    Value = 0,
-                    Margin = new Padding(0, 2, 0, 2)
+                    Value   = 0,
+                    Margin  = new Padding(0, 2, 0, 2)
                 };
-                
+
                 // Создаем метку для информации о файле
                 var labelInfo = new Label
                 {
-                    Name = $"lblSlot{i}",
-                    Text = $"Слот {i + 1}: Ожидание...",
-                    AutoSize = false,
-                    Size = new System.Drawing.Size(380, 15),
-                    Font = new System.Drawing.Font("Segoe UI", 8F),
+                    Name      = $"lblSlot{i}",
+                    Text      = $"Слот {i + 1}: Ожидание...",
+                    AutoSize  = false,
+                    Size      = new System.Drawing.Size(380, 15),
+                    Font      = new System.Drawing.Font("Segoe UI", 8F),
                     TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
-                    Margin = new Padding(0, 0, 0, 5)
+                    Margin    = new Padding(0, 0, 0, 5)
                 };
-                
+
                 // Добавляем контролы в панель
                 pnlFileSlots.Controls.Add(labelInfo);
                 pnlFileSlots.Controls.Add(progressBar);
-                
+
                 // Создаем объект слота
                 var slot = new FileUploadSlot(i, progressBar, labelInfo);
                 _uploadSlots.Add(slot);
             }
         }
-        
+
         /// <summary>
         /// Очистка слотов после завершения загрузки
         /// </summary>
@@ -687,7 +689,7 @@ namespace Ds3fsFileUploader
                 }
             }
         }
-        
+
         /// <summary>
         /// Получение свободного слота для загрузки
         /// </summary>
@@ -699,15 +701,16 @@ namespace Ds3fsFileUploader
                 {
                     if (!slot.IsBusy)
                     {
-                        slot.IsBusy = true;
+                        slot.IsBusy                  = true;
                         slot.CancellationTokenSource = new CancellationTokenSource();
                         return slot;
                     }
                 }
             }
+
             return null;
         }
-        
+
         /// <summary>
         /// Обновление прогресса для конкретного слота
         /// </summary>
@@ -718,24 +721,24 @@ namespace Ds3fsFileUploader
                 this.Invoke(new Action<FileUploadSlot, long, long>(UpdateSlotProgress), slot, bytesRead, totalBytes);
                 return;
             }
-            
+
             slot.UpdateProgress(bytesRead, totalBytes);
         }
-        
+
         /// <summary>
         /// Обработка файла с использованием слота
         /// </summary>
         private async Task<(bool success, long fileSize, bool isSkipped)> ProcessFileWithSlot(
-            HttpClient httpClient, 
-            string filePath, 
-            int fileIndex, 
+            HttpClient httpClient,
+            string filePath,
+            int fileIndex,
             int totalFiles,
             CancellationToken cancellationToken)
         {
-            var fileInfo = new FileInfo(filePath);
+            var fileInfo     = new FileInfo(filePath);
             var relativePath = GetRelativePath(tb_SourceFolder.Text, filePath);
-            var fileName = Path.GetFileName(filePath);
-            
+            var fileName     = Path.GetFileName(filePath);
+
             // Ждем доступный слот
             FileUploadSlot? slot = null;
             while (slot == null && !cancellationToken.IsCancellationRequested)
@@ -744,44 +747,44 @@ namespace Ds3fsFileUploader
                 if (slot == null)
                     await Task.Delay(50, cancellationToken);
             }
-            
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return (false, 0, false);
             }
-            
+
             try
             {
                 // Устанавливаем файл в слот
                 slot.SetFile(fileName, fileInfo.Length);
-                
+
                 // Обновляем информацию о текущем файле
                 var folderPath = Path.GetDirectoryName(relativePath) ?? "";
                 UpdateFileInfo(folderPath, fileName);
-                
+
                 // Проверяем существование файла если включена настройка
                 bool fileExists = false;
                 if (Settings.CheckFileExistsBeforeUpload)
                 {
                     fileExists = await CheckFileExists(httpClient, relativePath, _destinationUrl, cancellationToken);
                 }
-                
+
                 if (fileExists)
                 {
                     LogMessage($"Файл уже существует: {relativePath}");
                     return (true, 0, true);
                 }
-                
+
                 // Загружаем файл с повторными попытками
                 var uploadSuccess = await UploadFileWithRetry(
-                    httpClient, 
-                    filePath, 
-                    relativePath, 
-                    3, 
-                    _destinationUrl, 
+                    httpClient,
+                    filePath,
+                    relativePath,
+                    3,
+                    _destinationUrl,
                     cancellationToken,
                     slot);
-                
+
                 if (uploadSuccess)
                 {
                     LogMessage($"Успешно загружен: {relativePath}");
@@ -789,7 +792,7 @@ namespace Ds3fsFileUploader
                 else
                 {
                     LogMessage($"Ошибка загрузки: {relativePath}");
-                    
+
                     // Обновляем метку слота об ошибке
                     if (this.InvokeRequired)
                     {
@@ -800,7 +803,7 @@ namespace Ds3fsFileUploader
                         slot.LabelInfo.Text = $"{slot.FileName[..Math.Min(12, slot.FileName.Length)]}...: ОШИБКА!";
                     }
                 }
-                
+
                 return (uploadSuccess, uploadSuccess ? fileInfo.Length : 0, false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
