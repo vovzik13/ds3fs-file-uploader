@@ -1,22 +1,40 @@
 ```
 # Build artifacts
-*.o
 *.obj
 *.exe
 *.dll
-*.so
-*.a
-*.out
+*.pdb
+*.user
+*.userosscache
+*.suo
+*.cache
+*.ilk
+*.exp
+*.lib
+*.iobj
+*.ipdb
+*.tlog
+*.wrn
+*.metagen
+*.metaxml
+
+# Output directories
+bin/
+obj/
+Debug/
+Release/
+x64/
+x86/
+Debug*/
+Release*/
 
 # Dependencies
 packages/
-bin/
-obj/
+node_modules/
+vendor/
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
-*.swp
 
 # Environment
 .env
@@ -24,8 +42,17 @@ obj/
 *.env.*
 
 # Editors
+.vs/
 .vscode/
 .idea/
-*.userprefs
-*.user
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+TestResults/
 ```

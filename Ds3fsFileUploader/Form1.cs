@@ -372,7 +372,7 @@ namespace Ds3fsFileUploader
                     }
 
                     if (await UploadFile(httpClient, filePath, relativePath, destinationUrl, 
-                            slot != null ? (bytes, total) => UpdateSlotProgress(slot, bytes, total) : UpdateFileUploadProgress, 
+                            slot != null ? (bytes, total) => UpdateSlotProgress(slot, bytes, total) : null, 
                             cancellationToken))
                     {
                         return true;
@@ -602,41 +602,6 @@ namespace Ds3fsFileUploader
             Console.Write($@"\rПрогресс: [{
                 new string('=', (int)(percentage / 2))}{
                     new string(' ', 50 - (int)(percentage / 2))}] {percentage:0.0}% | {current}/{total} | Успешно: {success} | Ошибки: {errors} | Пропущено: {skipped}");
-        }
-
-        private void UpdateFileUploadProgress(long bytesRead, long totalBytes)
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new Action<long, long>(UpdateFileUploadProgress), bytesRead, totalBytes);
-                return;
-            }
-
-            if (totalBytes <= 0)
-                return;
-
-            var percentage = (int)((double)bytesRead / totalBytes * 100);
-            progressBar2.Value = Math.Min(percentage, progressBar2.Maximum);
-
-            // Обновляем информацию о прогрессе
-            var currentMb = (double)bytesRead / (1024 * 1024);
-            var totalMb   = (double)totalBytes / (1024 * 1024);
-            label15.Text = $@"Прогресс текущего файла: {currentMb:0.0} / {totalMb:0.0} MB ({percentage}%)";
-
-            progressBar2.Refresh();
-            label15.Refresh();
-        }
-
-        private void ResetFileProgress()
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(ResetFileProgress);
-                return;
-            }
-
-            progressBar2.Value = 0;
-            label15.Text       = @"Прогресс текущего файла:";
         }
 
         /// <summary>
