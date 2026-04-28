@@ -16,6 +16,11 @@ namespace Ds3fsFileUploader
         private long                    _totalBytesUploaded;
         private long                    _totalSourceFolderSize;
 
+        // Переменные для параллельной загрузки
+        private SemaphoreSlim _uploadSemaphore = null!;
+        private List<FileUploadSlot> _uploadSlots = null!;
+        private object _slotsLock = new object();
+
         // Куда копировать
         private string _destinationUrl = null!;
 
@@ -49,6 +54,9 @@ namespace Ds3fsFileUploader
 
             // Загружаем настройки
             LoadSettings();
+            
+            // Инициализируем слоты для загрузки
+            InitializeUploadSlots();
         }
 
         private void btChoiceFolder_Click(object sender, EventArgs e)
@@ -144,6 +152,19 @@ namespace Ds3fsFileUploader
             _tokenService?.Dispose();
             _tokenService = null;
 
+            // Отменяем все активные загрузки в слотах
+            lock (_slotsLock)
+            {
+                foreach (var slot in _uploadSlots)
+                {
+                    slot.CancellationTokenSource?.Cancel();
+                    slot.IsBusy = false;
+                }
+            }
+
+            // Очищаем слоты
+            ClearUploadSlots();
+
             // Обновляем кнопку
             UpdateStartStopButton(false);
 
@@ -186,50 +207,40 @@ namespace Ds3fsFileUploader
             var errorCount   = 0;
             var skippedCount = 0;
 
-            // Загружаем файлы по одному
+            // Инициализируем семафор для ограничения параллелизма
+            _uploadSemaphore = new SemaphoreSlim(Settings.MaxParallelUploads, Settings.MaxParallelUploads);
+
+            // Создаем список задач для всех файлов
+            var uploadTasks = new List<Task<(bool success, long fileSize)>>();
+
             for (var i = 0; i < filesToUpload.Count; i++)
             {
-                // Проверяем отмену перед каждым файлом
-                cancellationToken.ThrowIfCancellationRequested();
-
-                ResetFileProgress();
-
-                var filePath     = filesToUpload[i];
-                var relativePath = GetRelativePath(tb_SourceFolder.Text, filePath);
-                var fileSize     = new FileInfo(filePath).Length;
-
-                Console.WriteLine($@"[{i + 1}/{filesToUpload.Count}] Загрузка: {Path.GetFileName(filePath)} ({GetFileSizeReadable(filePath)})");
-
-                UpdateFileInfo(relativePath, Path.GetFileName(filePath));
-
-                // Проверяем существует ли файл
-                var fileExists = await CheckFileExists(httpClient, relativePath, _destinationUrl, cancellationToken);
-                if (fileExists)
+                var index = i;
+                var task = Task.Run(async () =>
                 {
-                    // Файл уже существует - пропускаем
-                    skippedCount++;
-                    LogMessage($"ПРОПУЩЕН: {relativePath} ({FormatFileSize(fileSize)}) - файл уже существует в хранилище");
-                    Console.WriteLine($@"Файл уже существует, пропускаем...");
-                }
-                else
-                {
-                    // Файла нет - загружаем
-                    var success = await UploadFileWithRetry(httpClient, filePath, relativePath, maxRetries: 3, _destinationUrl, cancellationToken);
-                    if (success)
+                    await _uploadSemaphore.WaitAsync(cancellationToken);
+                    try
                     {
-                        successCount++;
-                        _totalBytesUploaded += fileSize;
-                        LogMessage($"{relativePath} ({FormatFileSize(fileSize)})");
+                        return await ProcessFileWithSlot(httpClient, filesToUpload[index], index, filesToUpload.Count, 
+                            ref successCount, ref errorCount, ref skippedCount, cancellationToken);
                     }
-                    else
+                    finally
                     {
-                        errorCount++;
-                        LogMessage($"ОШИБКА: {relativePath} ({FormatFileSize(fileSize)}) - не удалось загрузить после 3 попыток");
+                        _uploadSemaphore.Release();
                     }
-                }
+                }, cancellationToken);
+                
+                uploadTasks.Add(task);
+            }
 
-                // Обновляем прогресс с учетом пропущенных файлов
-                UpdateProgressBar(i + 1, filesToUpload.Count, successCount, errorCount, skippedCount);
+            // Ждем завершения всех задач
+            var results = await Task.WhenAll(uploadTasks);
+
+            // Подсчитываем результаты
+            foreach (var (success, fileSize) in results)
+            {
+                if (success && fileSize > 0)
+                    _totalBytesUploaded += fileSize;
             }
 
             // Проверяем отмену перед обработкой пустых папок

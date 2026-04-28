@@ -12,4 +12,5 @@ public class AppSettings
     public string GrantType         { get; set; } = "password";
     public string ClientSecret      { get; set; } = "H4hJJygQoUxTIlRjn9pPNpijw4ho90CM";
     public string DestinationFolder { get; set; } = "";
+    public int    MaxParallelUploads { get; set; } = 3;
 }

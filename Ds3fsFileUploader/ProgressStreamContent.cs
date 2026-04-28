@@ -4,16 +4,18 @@ namespace Ds3fsFileUploader;
 
 public class ProgressStreamContent : StreamContent
 {
-    private readonly Stream              _stream;
-    private readonly Action<long, long>? _progressCallback;
-    private readonly long                _totalBytes;
-    private readonly CancellationToken   _cancellationToken;
+    private readonly Stream                    _stream;
+    private readonly Action<long, long, int>?  _progressCallback;
+    private readonly long                      _totalBytes;
+    private readonly CancellationToken         _cancellationToken;
+    private readonly int                       _slotIndex;
 
-    public ProgressStreamContent(Stream stream, Action<long, long>? progressCallback, long totalBytes, CancellationToken cancellationToken = default) : base(stream)
+    public ProgressStreamContent(Stream stream, Action<long, long, int>? progressCallback, long totalBytes, int slotIndex, CancellationToken cancellationToken = default) : base(stream)
     {
         _stream            = stream;
         _progressCallback  = progressCallback;
         _totalBytes        = totalBytes;
+        _slotIndex         = slotIndex;
         _cancellationToken = cancellationToken;
     }
 
@@ -28,7 +30,7 @@ public class ProgressStreamContent : StreamContent
             _cancellationToken.ThrowIfCancellationRequested();
             await stream.WriteAsync(buffer.AsMemory(0, read), _cancellationToken);
             totalRead += read;
-            _progressCallback?.Invoke(totalRead, _totalBytes);
+            _progressCallback?.Invoke(totalRead, _totalBytes, _slotIndex);
         }
     }
 }
