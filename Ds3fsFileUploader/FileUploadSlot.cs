@@ -23,6 +23,13 @@ public class FileUploadSlot
 
     public void UpdateProgress(long bytesRead, long totalBytes)
     {
+        // Проверяем, требуется ли инвокация для ProgressBar (он создан в UI потоке)
+        if (ProgressBar.InvokeRequired)
+        {
+            ProgressBar.Invoke(new Action<long, long>(UpdateProgress), bytesRead, totalBytes);
+            return;
+        }
+        
         BytesUploaded = bytesRead;
         TotalBytes = totalBytes;
 
@@ -42,6 +49,13 @@ public class FileUploadSlot
 
     public void Reset()
     {
+        // Проверяем, требуется ли инвокация для контролов (они созданы в UI потоке)
+        if (ProgressBar.InvokeRequired)
+        {
+            ProgressBar.Invoke(new Action(Reset));
+            return;
+        }
+        
         BytesUploaded = 0;
         TotalBytes = 0;
         FileName = string.Empty;
@@ -51,6 +65,13 @@ public class FileUploadSlot
 
     public void SetFile(string fileName, long fileSize)
     {
+        // Проверяем, требуется ли инвокация для контролов (они созданы в UI потоке)
+        if (ProgressBar.InvokeRequired)
+        {
+            ProgressBar.Invoke(new Action<string, long>(SetFile), fileName, fileSize);
+            return;
+        }
+        
         FileName = fileName;
         TotalBytes = fileSize;
         BytesUploaded = 0;
