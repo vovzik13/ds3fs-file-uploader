@@ -60,6 +60,8 @@
             label12              = new System.Windows.Forms.Label();
             label13              = new System.Windows.Forms.Label();
             label14              = new System.Windows.Forms.Label();
+            label16              = new System.Windows.Forms.Label();
+            label17              = new System.Windows.Forms.Label();
             btSaveSettings       = new System.Windows.Forms.Button();
             pnlFileSlots         = new System.Windows.Forms.FlowLayoutPanel();
             SuspendLayout();

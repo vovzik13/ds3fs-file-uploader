@@ -3,44 +3,33 @@
 *.obj
 *.exe
 *.dll
-*.pdb
-*.user
-*.aps
-*.ilk
-*.iobj
-*.ipdb
-*.tlog
-*.exp
-*.lib
 *.so
-*.dylib
-*.class
+*.a
+*.o
+*.out
+*.pyc
+__pycache__/
 
 # Dependencies
-packages/
-bin/
-obj/
+node_modules/
+venv/
+.venv/
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs and temp files
 *.log
 *.tmp
-*.temp
-*.cache
 
-# Editors
-.vs/
-.vshost.exe
-.userprefs
-*.userosscache
-*.suo
-*.user
-*.aps
-*.to
-.nrepl-port
-
-# OS generated files
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Icon?
+# Build directories
+dist/
+build/
+target/
 ```
