@@ -304,21 +304,13 @@
             groupBoxCopyProcess.TabIndex = 28;
             groupBoxCopyProcess.Text = "Процесс копирования:";
             groupBoxCopyProcess.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
-            // 
-            // progressBar1
-            // 
-            progressBar1.Location = new System.Drawing.Point(21, 20);
-            progressBar1.Margin   = new System.Windows.Forms.Padding(2, 1, 2, 1);
-            progressBar1.Name     = "progressBar1";
-            progressBar1.Size     = new System.Drawing.Size(395, 22);
-            progressBar1.Step     = 1;
-            progressBar1.TabIndex = 8;
-            progressBar1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            groupBoxCopyProcess.AutoSize = true;
+            groupBoxCopyProcess.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new System.Drawing.Point(22, 5);
+            label3.Location = new System.Drawing.Point(6, 22);
             label3.Margin   = new System.Windows.Forms.Padding(2, 0, 2, 0);
             label3.Name     = "label3";
             label3.Size     = new System.Drawing.Size(38, 15);
@@ -326,17 +318,31 @@
             label3.Text     = "label3";
             label3.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             // 
+            // progressBar1
+            // 
+            progressBar1.Location = new System.Drawing.Point(6, 40);
+            progressBar1.Margin   = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            progressBar1.Name     = "progressBar1";
+            progressBar1.Size     = new System.Drawing.Size(426, 22);
+            progressBar1.Step     = 1;
+            progressBar1.TabIndex = 8;
+            progressBar1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            progressBar1.AutoSize = true;
+            progressBar1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            // 
             // pnlFileSlots
             // 
-            pnlFileSlots.AutoScroll = true;
+            pnlFileSlots.AutoScroll = false;
             pnlFileSlots.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            pnlFileSlots.Location = new System.Drawing.Point(21, 48);
+            pnlFileSlots.Location = new System.Drawing.Point(6, 65);
             pnlFileSlots.Name = "pnlFileSlots";
-            pnlFileSlots.Size = new System.Drawing.Size(395, 240);
+            pnlFileSlots.Size = new System.Drawing.Size(426, 100);
             pnlFileSlots.TabIndex = 30;
-            pnlFileSlots.WrapContents = false;
-            pnlFileSlots.Dock = DockStyle.Bottom;
+            pnlFileSlots.WrapContents = true;
             pnlFileSlots.Padding = new Padding(5);
+            pnlFileSlots.AutoSize = true;
+            pnlFileSlots.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            pnlFileSlots.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             // 
             // btSaveSettings
             // 
@@ -386,6 +392,7 @@
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
+            AutoScroll          = true;
             ClientSize          = new System.Drawing.Size(457, 630);
             Controls.Add(tb_ClientSecret);
             Controls.Add(label12);
