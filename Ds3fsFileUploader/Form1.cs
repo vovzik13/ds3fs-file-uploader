@@ -208,6 +208,12 @@ namespace Ds3fsFileUploader
 
             // Создаем список задач для всех файлов
             var uploadTasks = new List<Task<(bool success, long fileSize, bool isSkipped)>>();
+            
+            // Счетчики для обновления прогресса
+            int completedCount = 0;
+            int successCount = 0;
+            int errorCount = 0;
+            int skippedCount = 0;
 
             for (var i = 0; i < filesToUpload.Count; i++)
             {
@@ -229,16 +235,16 @@ namespace Ds3fsFileUploader
                 uploadTasks.Add(task);
             }
 
-            // Ждем завершения всех задач
-            var results = await Task.WhenAll(uploadTasks);
-
-            // Подсчитываем результаты
-            int successCount = 0;
-            int errorCount   = 0;
-            int skippedCount = 0;
-
-            foreach (var (success, fileSize, isSkipped) in results)
+            // Обрабатываем задачи по мере их завершения
+            while (uploadTasks.Count > 0)
             {
+                var completedTask = await Task.WhenAny(uploadTasks);
+                uploadTasks.Remove(completedTask);
+                
+                var (success, fileSize, isSkipped) = completedTask.Result;
+                
+                // Обновляем счетчики
+                completedCount++;
                 if (isSkipped)
                 {
                     skippedCount++;
@@ -252,10 +258,10 @@ namespace Ds3fsFileUploader
                 {
                     errorCount++;
                 }
+                
+                // Обновляем прогресс бар после каждой завершенной задачи
+                UpdateProgressBar(completedCount, filesToUpload.Count, successCount, errorCount, skippedCount);
             }
-
-            // Обновляем прогресс бар с итоговыми результатами
-            UpdateProgressBar(filesToUpload.Count, filesToUpload.Count, successCount, errorCount, skippedCount);
 
             // Проверяем отмену перед обработкой пустых папок
             cancellationToken.ThrowIfCancellationRequested();
