@@ -60,11 +60,10 @@
             label12              = new System.Windows.Forms.Label();
             label13              = new System.Windows.Forms.Label();
             label14              = new System.Windows.Forms.Label();
-            btSaveSettings       = new System.Windows.Forms.Button();
-            progressBar2         = new System.Windows.Forms.ProgressBar();
-            label15              = new System.Windows.Forms.Label();
             label16              = new System.Windows.Forms.Label();
             label17              = new System.Windows.Forms.Label();
+            btSaveSettings       = new System.Windows.Forms.Button();
+            pnlFileSlots         = new System.Windows.Forms.FlowLayoutPanel();
             SuspendLayout();
             // 
             // openFileDialog1
@@ -352,21 +351,15 @@
             btSaveSettings.UseVisualStyleBackColor =  true;
             btSaveSettings.Click                   += btSaveSettings_Click;
             // 
-            // progressBar2
+            // pnlFileSlots
             // 
-            progressBar2.Location = new System.Drawing.Point(21, 593);
-            progressBar2.Name     = "progressBar2";
-            progressBar2.Size     = new System.Drawing.Size(418, 15);
-            progressBar2.TabIndex = 30;
-            // 
-            // label15
-            // 
-            label15.AutoSize = true;
-            label15.Location = new System.Drawing.Point(21, 575);
-            label15.Name     = "label15";
-            label15.Size     = new System.Drawing.Size(156, 15);
-            label15.TabIndex = 31;
-            label15.Text     = "Прогресс текущего файла:";
+            pnlFileSlots.AutoScroll = true;
+            pnlFileSlots.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            pnlFileSlots.Location = new System.Drawing.Point(21, 575);
+            pnlFileSlots.Name = "pnlFileSlots";
+            pnlFileSlots.Size = new System.Drawing.Size(418, 120);
+            pnlFileSlots.TabIndex = 30;
+            pnlFileSlots.WrapContents = false;
             // 
             // label16
             // 
@@ -437,8 +430,7 @@
             Controls.Add(btChoiceFolder);
             Controls.Add(label13);
             Controls.Add(btSaveSettings);
-            Controls.Add(progressBar2);
-            Controls.Add(label15);
+            Controls.Add(pnlFileSlots);
             Controls.Add(label14);
             Controls.Add(label16);
             Controls.Add(label17);
@@ -508,8 +500,7 @@
         private System.Windows.Forms.Timer       timerElapsed;
         
         private System.Windows.Forms.Button      btSaveSettings;
-        private System.Windows.Forms.ProgressBar progressBar2;
-        private System.Windows.Forms.Label       label15;
+        private FlowLayoutPanel                  pnlFileSlots;
 
         private void UpdateStartStopButton(bool isRunning)
         {

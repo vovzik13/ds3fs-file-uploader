@@ -91,7 +91,7 @@ public class TokenService : IDisposable
     /// </summary>
     public class RefreshTokenHandler : DelegatingHandler
     {
-        private readonly TokenService _tokenService;
+        private readonly TokenService   _tokenService;
         private readonly Action<string> _logAction;
 
         public RefreshTokenHandler(TokenService tokenService, Action<string> logAction)
@@ -146,8 +146,11 @@ public class TokenService : IDisposable
                 else
                 {
                     // Логируем любую ошибку после повторной попытки (не только 401)
-                    _logAction($"[TokenService] Повторная попыка с новым токеном вернула ошибку {(int)response.StatusCode} - {response.ReasonPhrase}");
-                    Console.WriteLine($"[TokenService] Повторная попытка также вернула ошибку {(int)response.StatusCode}. Токен недействителен или другая ошибка.");
+                    _logAction(
+                        $"[TokenService] Повторная попыка с новым токеном вернула ошибку {(int)response.StatusCode} - {response.ReasonPhrase}");
+
+                    Console.WriteLine(
+                        $"[TokenService] Повторная попытка также вернула ошибку {(int)response.StatusCode}. Токен недействителен или другая ошибка.");
                 }
             }
 
