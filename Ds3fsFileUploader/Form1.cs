@@ -92,7 +92,10 @@ namespace Ds3fsFileUploader
             // Обновляем URL перед началом процесса
             UpdateUrls();
 
+            // Добавляем имя последней папки источника к пути назначения
+            var sourceFolderName = new DirectoryInfo(tb_SourceFolder.Text).Name;
             _destinationUrl = tb_Destination.Text.EndsWith('/') ? tb_Destination.Text : $"{tb_Destination.Text}/";
+            _destinationUrl = $"{_destinationUrl}{sourceFolderName}/";
 
             // Запускаем процесс
             await StartProcess();
@@ -764,10 +767,6 @@ namespace Ds3fsFileUploader
                 // Устанавливаем файл в слот
                 slot.SetFile(fileName, fileInfo.Length);
 
-                // Обновляем информацию о текущем файле
-                var folderPath = Path.GetDirectoryName(relativePath) ?? "";
-                UpdateFileInfo(folderPath, fileName);
-
                 // Проверяем существование файла если включена настройка
                 bool fileExists = false;
                 if (Settings.CheckFileExistsBeforeUpload)
@@ -1111,22 +1110,6 @@ namespace Ds3fsFileUploader
 
             // Обновляем интерфейс
             FormsApplication.DoEvents();
-        }
-
-        private void UpdateFileInfo(string currentFolder, string currentFile)
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new Action<string, string>(UpdateFileInfo), currentFolder, currentFile);
-                return;
-            }
-
-            tbcurrentFolder.Text = currentFolder;
-            tbCurentFile.Text    = currentFile;
-
-            // Принудительное обновление
-            tbcurrentFolder.Refresh();
-            tbCurentFile.Refresh();
         }
 
         private static async Task<bool> CheckFileExists(
