@@ -1,42 +1,46 @@
 ```
-# Build artifacts
+# Compiled and build artifacts
 *.obj
 *.exe
 *.dll
 *.pdb
 *.user
-*.userosscache
-*.suo
-*.cache
+*.aps
 *.ilk
-*.exp
-*.lib
 *.iobj
 *.ipdb
-*.builds
-*.built
-*.log
+*.tlog
+*.exp
+*.lib
+*.so
+*.dylib
+*.class
 
 # Dependencies
 packages/
 bin/
 obj/
 
-# Visual Studio files
-.vs/
-*.userprefs
-
-# Temporary files
+# Logs and temp files
+*.log
 *.tmp
 *.temp
 *.cache
 
-# Environment
-.env
-.env.local
-*.env.*
+# Editors
+.vs/
+.vshost.exe
+.userprefs
+*.userosscache
+*.suo
+*.user
+*.aps
+*.to
+.nrepl-port
 
 # OS generated files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Icon?
 ```

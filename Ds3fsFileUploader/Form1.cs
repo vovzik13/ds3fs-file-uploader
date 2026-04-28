@@ -385,9 +385,16 @@ namespace Ds3fsFileUploader
                         continue;
                     }
 
+                    Action<long, long, int>? progressCallback = null;
+                    if (slot != null)
+                    {
+                        progressCallback = (bytes, total, _) => UpdateSlotProgress(slot, bytes, total);
+                    }
+
                     if (await UploadFile(httpClient, filePath, relativePath, destinationUrl, 
-                            slot != null ? (bytes, total) => UpdateSlotProgress(slot, bytes, total) : null, 
-                            cancellationToken))
+                            progressCallback, 
+                            cancellationToken,
+                            slot?.SlotIndex ?? -1))
                     {
                         return true;
                     }
@@ -425,8 +432,9 @@ namespace Ds3fsFileUploader
             string filePath,
             string relativePath,
             string destinationUrl,
-            Action<long, long>? progressCallback = null,
-            CancellationToken cancellationToken = default)
+            Action<long, long, int>? progressCallback = null,
+            CancellationToken cancellationToken = default,
+            int slotIndex = -1)
         {
             var fileInfo   = new FileInfo(filePath);
             var totalBytes = fileInfo.Length;
@@ -444,7 +452,7 @@ namespace Ds3fsFileUploader
             using var formData = new MultipartFormDataContent();
 
             // Создаем кастомный StreamContent для отслеживания прогресса
-            var progressStreamContent = new ProgressStreamContent(fileStream, progressCallback, totalBytes, cancellationToken);
+            var progressStreamContent = new ProgressStreamContent(fileStream, progressCallback, totalBytes, slotIndex, cancellationToken);
             progressStreamContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
 
             // Добавляем файл в form-data с правильными заголовками
