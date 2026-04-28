@@ -10,7 +10,6 @@
 
 # Dependencies
 packages/
-lib/
 bin/
 obj/
 
@@ -28,50 +27,5 @@ obj/
 .vscode/
 .idea/
 *.userprefs
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
-coverage/
-htmlcov/
-*.coverage
-
-# Python specific
-__pycache__/
-*.pyc
-*.pyo
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Node.js specific
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Java specific
-*.class
-*.jar
-*.war
-*.ear
-target/
-.gradle/
-build/
-
-# C# specific
-*.userprefs
-[Bb]in/
-[Oo]bj/
-[Tt]est[Rr]esult*/
-*.Cache
-*.pidb
-*.suo
 *.user
-*.aps
-*.ilk
-*.meta
-*.prefab
 ```

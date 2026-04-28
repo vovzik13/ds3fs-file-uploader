@@ -70,6 +70,11 @@ public partial class FrmMain
         _settings.ClientSecret      = tb_ClientSecret.Text;
         _settings.DestinationFolder = tb_Destination.Text;
     }
+    
+    /// <summary>
+    /// Доступ к настройкам из основного класса
+    /// </summary>
+    private AppSettings Settings => _settings;
 
     private void btSaveSettings_Click(object sender, EventArgs e)
     {

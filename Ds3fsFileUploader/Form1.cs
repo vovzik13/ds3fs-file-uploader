@@ -352,7 +352,8 @@ namespace Ds3fsFileUploader
             string relativePath,
             int maxRetries,
             string destinationUrl,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            FileUploadSlot? slot = null)
         {
             for (var attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -370,7 +371,9 @@ namespace Ds3fsFileUploader
                         continue;
                     }
 
-                    if (await UploadFile(httpClient, filePath, relativePath, destinationUrl, UpdateFileUploadProgress, cancellationToken))
+                    if (await UploadFile(httpClient, filePath, relativePath, destinationUrl, 
+                            slot != null ? (bytes, total) => UpdateSlotProgress(slot, bytes, total) : UpdateFileUploadProgress, 
+                            cancellationToken))
                     {
                         return true;
                     }
@@ -634,6 +637,214 @@ namespace Ds3fsFileUploader
 
             progressBar2.Value = 0;
             label15.Text       = @"Прогресс текущего файла:";
+        }
+
+        /// <summary>
+        /// Инициализация слотов для параллельной загрузки
+        /// </summary>
+        private void InitializeUploadSlots()
+        {
+            _uploadSlots = new List<FileUploadSlot>();
+            
+            // Очищаем панель от старых контролов
+            pnlFileSlots.Controls.Clear();
+            
+            // Создаем слоты согласно настройке MaxParallelUploads
+            for (int i = 0; i < Settings.MaxParallelUploads; i++)
+            {
+                // Создаем прогресс-бар для слота
+                var progressBar = new ProgressBar
+                {
+                    Name = $"pbSlot{i}",
+                    Size = new System.Drawing.Size(380, 20),
+                    Maximum = 100,
+                    Value = 0,
+                    Margin = new Padding(0, 2, 0, 2)
+                };
+                
+                // Создаем метку для информации о файле
+                var labelInfo = new Label
+                {
+                    Name = $"lblSlot{i}",
+                    Text = $"Слот {i + 1}: Ожидание...",
+                    AutoSize = false,
+                    Size = new System.Drawing.Size(380, 15),
+                    Font = new System.Drawing.Font("Segoe UI", 8F),
+                    TextAlign = System.Drawing.ContentAlignment.MiddleLeft,
+                    Margin = new Padding(0, 0, 0, 5)
+                };
+                
+                // Добавляем контролы в панель
+                pnlFileSlots.Controls.Add(labelInfo);
+                pnlFileSlots.Controls.Add(progressBar);
+                
+                // Создаем объект слота
+                var slot = new FileUploadSlot(i, progressBar, labelInfo);
+                _uploadSlots.Add(slot);
+            }
+        }
+        
+        /// <summary>
+        /// Очистка слотов после завершения загрузки
+        /// </summary>
+        private void ClearUploadSlots()
+        {
+            lock (_slotsLock)
+            {
+                foreach (var slot in _uploadSlots)
+                {
+                    slot.Reset();
+                    slot.IsBusy = false;
+                    slot.CancellationTokenSource?.Dispose();
+                    slot.CancellationTokenSource = null;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Получение свободного слота для загрузки
+        /// </summary>
+        private FileUploadSlot? GetAvailableSlot()
+        {
+            lock (_slotsLock)
+            {
+                foreach (var slot in _uploadSlots)
+                {
+                    if (!slot.IsBusy)
+                    {
+                        slot.IsBusy = true;
+                        slot.CancellationTokenSource = new CancellationTokenSource();
+                        return slot;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// Обновление прогресса для конкретного слота
+        /// </summary>
+        private void UpdateSlotProgress(FileUploadSlot slot, long bytesRead, long totalBytes)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<FileUploadSlot, long, long>(UpdateSlotProgress), slot, bytesRead, totalBytes);
+                return;
+            }
+            
+            slot.UpdateProgress(bytesRead, totalBytes);
+        }
+        
+        /// <summary>
+        /// Обработка файла с использованием слота
+        /// </summary>
+        private async Task<(bool success, long fileSize)> ProcessFileWithSlot(
+            HttpClient httpClient, 
+            string filePath, 
+            int fileIndex, 
+            int totalFiles,
+            ref int successCount, 
+            ref int errorCount, 
+            ref int skippedCount, 
+            CancellationToken cancellationToken)
+        {
+            var fileInfo = new FileInfo(filePath);
+            var relativePath = GetRelativePath(tb_SourceFolder.Text, filePath);
+            var fileName = Path.GetFileName(filePath);
+            
+            // Ждем доступный слот
+            FileUploadSlot? slot = null;
+            while (slot == null && !cancellationToken.IsCancellationRequested)
+            {
+                slot = GetAvailableSlot();
+                if (slot == null)
+                    await Task.Delay(50, cancellationToken);
+            }
+            
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return (false, 0);
+            }
+            
+            try
+            {
+                // Устанавливаем файл в слот
+                slot.SetFile(fileName, fileInfo.Length);
+                
+                // Обновляем информацию о текущем файле
+                var folderPath = Path.GetDirectoryName(relativePath) ?? "";
+                UpdateFileInfo(folderPath, fileName);
+                
+                // Проверяем существование файла если включена настройка
+                bool fileExists = false;
+                if (Settings.CheckFileExistsBeforeUpload)
+                {
+                    fileExists = await CheckFileExists(httpClient, relativePath, _destinationUrl, cancellationToken);
+                }
+                
+                if (fileExists)
+                {
+                    LogMessage($"Файл уже существует: {relativePath}");
+                    skippedCount++;
+                    UpdateProgressBar(fileIndex + 1, totalFiles, successCount, errorCount, skippedCount);
+                    return (true, 0);
+                }
+                
+                // Загружаем файл с повторными попытками
+                var uploadSuccess = await UploadFileWithRetry(
+                    httpClient, 
+                    filePath, 
+                    relativePath, 
+                    3, 
+                    _destinationUrl, 
+                    cancellationToken,
+                    slot);
+                
+                if (uploadSuccess)
+                {
+                    successCount++;
+                    LogMessage($"Успешно загружен: {relativePath}");
+                }
+                else
+                {
+                    errorCount++;
+                    LogMessage($"Ошибка загрузки: {relativePath}");
+                    
+                    // Обновляем метку слота об ошибке
+                    if (this.InvokeRequired)
+                    {
+                        this.Invoke(() => slot.LabelInfo.Text = $"{slot.FileName[..Math.Min(12, slot.FileName.Length)]}...: ОШИБКА!");
+                    }
+                    else
+                    {
+                        slot.LabelInfo.Text = $"{slot.FileName[..Math.Min(12, slot.FileName.Length)]}...: ОШИБКА!";
+                    }
+                }
+                
+                UpdateProgressBar(fileIndex + 1, totalFiles, successCount, errorCount, skippedCount);
+                
+                return (uploadSuccess, uploadSuccess ? fileInfo.Length : 0);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                LogMessage($"Загрузка файла {fileName} отменена");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                errorCount++;
+                LogMessage($"Исключение при загрузке {fileName}: {ex.Message}");
+                UpdateProgressBar(fileIndex + 1, totalFiles, successCount, errorCount, skippedCount);
+                return (false, 0);
+            }
+            finally
+            {
+                // Освобождаем слот
+                slot.IsBusy = false;
+                slot.CancellationTokenSource?.Cancel();
+                slot.CancellationTokenSource?.Dispose();
+                slot.CancellationTokenSource = null;
+            }
         }
 
         private static void LogMessage(string message)
