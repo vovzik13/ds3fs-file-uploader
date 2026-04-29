@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components           = new System.ComponentModel.Container();
             openFileDialog1      = new System.Windows.Forms.OpenFileDialog();
             btChoiceFolder       = new System.Windows.Forms.Button();
             folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
@@ -36,8 +37,6 @@
             label2               = new System.Windows.Forms.Label();
             tb_Destination       = new System.Windows.Forms.TextBox();
             btGetFileList        = new System.Windows.Forms.Button();
-            tbcurrentFolder      = new System.Windows.Forms.TextBox();
-            tbCurentFile         = new System.Windows.Forms.TextBox();
             progressBar1         = new System.Windows.Forms.ProgressBar();
             label3               = new System.Windows.Forms.Label();
             label4               = new System.Windows.Forms.Label();
@@ -59,11 +58,14 @@
             tb_ClientSecret      = new System.Windows.Forms.TextBox();
             label12              = new System.Windows.Forms.Label();
             label13              = new System.Windows.Forms.Label();
-            label14              = new System.Windows.Forms.Label();
+            groupBoxCopyProcess  = new System.Windows.Forms.GroupBox();
+            pnlFileSlots         = new System.Windows.Forms.FlowLayoutPanel();
             label16              = new System.Windows.Forms.Label();
             label17              = new System.Windows.Forms.Label();
             btSaveSettings       = new System.Windows.Forms.Button();
-            pnlFileSlots         = new System.Windows.Forms.FlowLayoutPanel();
+            labelElapsedTime     = new System.Windows.Forms.Label();
+            timerElapsed         = new System.Windows.Forms.Timer(components);
+            groupBoxCopyProcess.SuspendLayout();
             SuspendLayout();
             // 
             // openFileDialog1
@@ -133,37 +135,20 @@
             btGetFileList.UseVisualStyleBackColor =  false;
             btGetFileList.Click                   += btGetFileList_Click;
             // 
-            // tbcurrentFolder
-            // 
-            tbcurrentFolder.Enabled  = false;
-            tbcurrentFolder.Location = new System.Drawing.Point(21, 506);
-            tbcurrentFolder.Margin   = new System.Windows.Forms.Padding(2, 1, 2, 1);
-            tbcurrentFolder.Name     = "tbcurrentFolder";
-            tbcurrentFolder.Size     = new System.Drawing.Size(265, 23);
-            tbcurrentFolder.TabIndex = 6;
-            // 
-            // tbCurentFile
-            // 
-            tbCurentFile.Enabled  = false;
-            tbCurentFile.Location = new System.Drawing.Point(290, 506);
-            tbCurentFile.Margin   = new System.Windows.Forms.Padding(2, 1, 2, 1);
-            tbCurentFile.Name     = "tbCurentFile";
-            tbCurentFile.Size     = new System.Drawing.Size(149, 23);
-            tbCurentFile.TabIndex = 7;
-            // 
             // progressBar1
             // 
-            progressBar1.Location = new System.Drawing.Point(21, 552);
-            progressBar1.Margin   = new System.Windows.Forms.Padding(2, 1, 2, 1);
-            progressBar1.Name     = "progressBar1";
-            progressBar1.Size     = new System.Drawing.Size(418, 22);
-            progressBar1.Step     = 1;
+            progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
+            progressBar1.Location = new System.Drawing.Point(9, 29);
+            progressBar1.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new System.Drawing.Size(424, 22);
+            progressBar1.Step = 1;
             progressBar1.TabIndex = 8;
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new System.Drawing.Point(22, 536);
+            label3.Location = new System.Drawing.Point(10, 14);
             label3.Margin   = new System.Windows.Forms.Padding(2, 0, 2, 0);
             label3.Name     = "label3";
             label3.Size     = new System.Drawing.Size(38, 15);
@@ -332,32 +317,28 @@
             label13.TabIndex    = 0;
             label13.Text        = "Настройки Авторизации";
             // 
-            // label14
+            // groupBoxCopyProcess
             // 
-            label14.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            label14.Location    = new System.Drawing.Point(11, 470);
-            label14.Name        = "label14";
-            label14.Size        = new System.Drawing.Size(438, 150);
-            label14.TabIndex    = 28;
-            label14.Text        = "Процесс копирования:";
-            // 
-            // btSaveSettings
-            // 
-            btSaveSettings.Location                =  new System.Drawing.Point(337, 308);
-            btSaveSettings.Name                    =  "btSaveSettings";
-            btSaveSettings.Size                    =  new System.Drawing.Size(112, 65);
-            btSaveSettings.TabIndex                =  29;
-            btSaveSettings.Text                    =  "Сохранить настройки";
-            btSaveSettings.UseVisualStyleBackColor =  true;
-            btSaveSettings.Click                   += btSaveSettings_Click;
+            groupBoxCopyProcess.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
+            groupBoxCopyProcess.Controls.Add(label3);
+            groupBoxCopyProcess.Controls.Add(progressBar1);
+            groupBoxCopyProcess.Controls.Add(pnlFileSlots);
+            groupBoxCopyProcess.Location = new System.Drawing.Point(11, 470);
+            groupBoxCopyProcess.Name     = "groupBoxCopyProcess";
+            groupBoxCopyProcess.Size     = new System.Drawing.Size(438, 353);
+            groupBoxCopyProcess.TabIndex = 28;
+            groupBoxCopyProcess.TabStop  = false;
+            groupBoxCopyProcess.Text     = "Процесс копирования:";
             // 
             // pnlFileSlots
             // 
+            pnlFileSlots.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
             pnlFileSlots.AutoScroll = true;
             pnlFileSlots.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            pnlFileSlots.Location = new System.Drawing.Point(21, 575);
+            pnlFileSlots.Location = new System.Drawing.Point(9, 64);
             pnlFileSlots.Name = "pnlFileSlots";
-            pnlFileSlots.Size = new System.Drawing.Size(418, 120);
+            pnlFileSlots.Padding = new System.Windows.Forms.Padding(5);
+            pnlFileSlots.Size = new System.Drawing.Size(423, 137);
             pnlFileSlots.TabIndex = 30;
             pnlFileSlots.WrapContents = false;
             // 
@@ -379,9 +360,18 @@
             label17.TabIndex    = 33;
             label17.Text        = "Куда:";
             // 
+            // btSaveSettings
+            // 
+            btSaveSettings.Location                =  new System.Drawing.Point(337, 308);
+            btSaveSettings.Name                    =  "btSaveSettings";
+            btSaveSettings.Size                    =  new System.Drawing.Size(112, 65);
+            btSaveSettings.TabIndex                =  29;
+            btSaveSettings.Text                    =  "Сохранить настройки";
+            btSaveSettings.UseVisualStyleBackColor =  true;
+            btSaveSettings.Click                   += btSaveSettings_Click;
+            // 
             // labelElapsedTime
             // 
-            labelElapsedTime          = new System.Windows.Forms.Label();
             labelElapsedTime.AutoSize = true;
             labelElapsedTime.Location = new System.Drawing.Point(337, 435);
             labelElapsedTime.Name     = "labelElapsedTime";
@@ -391,15 +381,14 @@
             // 
             // timerElapsed
             // 
-            timerElapsed          = new System.Windows.Forms.Timer();
-            timerElapsed.Interval = 1000;
-            timerElapsed.Tick += timerElapsed_Tick;
+            timerElapsed.Interval =  1000;
+            timerElapsed.Tick     += timerElapsed_Tick;
             // 
             // FrmMain
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize          = new System.Drawing.Size(457, 630);
+            ClientSize          = new System.Drawing.Size(457, 683);
             Controls.Add(tb_ClientSecret);
             Controls.Add(label12);
             Controls.Add(tb_GrantType);
@@ -418,10 +407,6 @@
             Controls.Add(label5);
             Controls.Add(tb_BaseUrlApi);
             Controls.Add(label4);
-            Controls.Add(label3);
-            Controls.Add(progressBar1);
-            Controls.Add(tbCurentFile);
-            Controls.Add(tbcurrentFolder);
             Controls.Add(btGetFileList);
             Controls.Add(tb_Destination);
             Controls.Add(label2);
@@ -430,14 +415,15 @@
             Controls.Add(btChoiceFolder);
             Controls.Add(label13);
             Controls.Add(btSaveSettings);
-            Controls.Add(pnlFileSlots);
-            Controls.Add(label14);
+            Controls.Add(groupBoxCopyProcess);
             Controls.Add(label16);
             Controls.Add(label17);
             Controls.Add(labelElapsedTime);
             Margin      = new System.Windows.Forms.Padding(2, 1, 2, 1);
             MaximizeBox = false;
             Text        = "Копирование папки в FS";
+            groupBoxCopyProcess.ResumeLayout(false);
+            groupBoxCopyProcess.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -454,7 +440,7 @@
 
         private System.Windows.Forms.Label label16;
 
-        private System.Windows.Forms.Label label14;
+        private System.Windows.Forms.GroupBox groupBoxCopyProcess;
 
         private System.Windows.Forms.Label label13;
 
@@ -492,15 +478,13 @@
         private System.Windows.Forms.Label       label2;
         private System.Windows.Forms.TextBox     tb_Destination;
         private System.Windows.Forms.Button      btGetFileList;
-        private System.Windows.Forms.TextBox     tbcurrentFolder;
-        private System.Windows.Forms.TextBox     tbCurentFile;
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.Label       label3;
         private System.Windows.Forms.Label       labelElapsedTime;
         private System.Windows.Forms.Timer       timerElapsed;
         
-        private System.Windows.Forms.Button      btSaveSettings;
-        private FlowLayoutPanel                  pnlFileSlots;
+        private System.Windows.Forms.Button          btSaveSettings;
+        private System.Windows.Forms.FlowLayoutPanel pnlFileSlots;
 
         private void UpdateStartStopButton(bool isRunning)
         {
