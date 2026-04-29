@@ -302,7 +302,7 @@ namespace Ds3fsFileUploader
                              Время окончания: {operationEndTime:HH:mm:ss}
                              Продолжительность: {operationDuration.Hours:D2}:{operationDuration.Minutes:D2}:{operationDuration.Seconds:D2}
                              Средняя скорость: {avgSpeedMbps:F2} MB/s
-                             Успешно загружено: {successCount}
+                             Успешно загружено: {successCount} ({FormatFileSize(_totalBytesUploaded)})
                              С ошибками: {errorCount}
                              Пропущено (уже существуют): {skippedCount}
                              """, @"Результат", MessageBoxButtons.OK, MessageBoxIcon.Information
